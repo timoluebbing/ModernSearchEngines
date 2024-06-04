@@ -65,44 +65,8 @@ def L2LossRegression(X, Y, lmbd_reg=0.):
                  args=(X, Y, lmbd_reg)).x
     return np.expand_dims(w, 1)
 
-def LeastSquares(X, Y, use_pinv=False):
-    ''' solves unregularized linear regression 
-    analytically with the design matrix 
-    X (in R^(nxd)) and true values Y (in R^n)
-    
-    X: deisgn matrix n x d
-    Y: true values n x 1
-    
-    output: weight of linear regression d x 1
-    '''
-    
-    if use_pinv:
-        w = np.linalg.pinv(X.T @ X) @ (X.T @ Y)
-    else:
-        w = np.linalg.inv(X.T @ X) @ (X.T @ Y)
-        
-    return np.expand_dims(w, 1)
-
 def LeastSquares(X, Y):
     return np.linalg.solve(X.T @ X, X.T @ Y)
-
-def RidgeRegression(X, Y, lmbd_reg, use_pinv=False):
-    ''' solves linear regression with
-    L2 Loss + L2 regularization
-
-    X: deisgn matrix n x d
-    Y: true values n x 1
-    lmbd_reg: weight regularization
-
-    output: weight of linear regression d x 1
-    '''
-    
-    if use_pinv:
-        w = np.linalg.pinv(X.T @ X + lmbd_reg * np.eye(X.shape[1])) @ (X.T @ Y)
-    else:
-        w = np.linalg.inv(X.T @ X + lmbd_reg * np.eye(X.shape[1])) @ (X.T @ Y)
-    
-    return w # np.expand_dims(w, 1)
 
 def RidgeRegression(X, Y, lmbd_reg):
     n = X.shape[1]
@@ -131,6 +95,19 @@ def Basis(X, k):
     
     return design_matrix
 
+def FourierBasisNormalized(X, k):
+    # Init
+    n = X.shape[0]
+    design_matrix = np.zeros((n, 2*k+1))
+    # first col is constant 1/sqrt(2)
+    design_matrix[:, 0] = 1/np.sqrt(2)
+    
+    # remaining cols are sin and cos functions
+    for i in range(1, k+1):
+        design_matrix[:, 2*i-1] = np.sin(2*np.pi*i*X).reshape(-1)
+        design_matrix[:, 2*i] = np.cos(2*np.pi*i*X).reshape(-1)
+        
+    return design_matrix
 
 def load_data(path='onedim_data.npy'):
     data = np.load(path, allow_pickle=True).item()
@@ -175,7 +152,9 @@ if __name__ == '__main__':
     ### Part (b) ###
     X = np.array([[1], [2], [3]])
     X_basis = Basis(X, 2)
+    X_basis_normalized = FourierBasisNormalized(X, 2)
     print(X_basis)
+    print(X_basis_normalized)
     
     
     ### Part (c) ###
@@ -193,8 +172,12 @@ if __name__ == '__main__':
     
     ### Empirical part of excerise (c) ###    
     ks = [1, 2, 3, 5, 10, 15, 20]
-    ks = [1, 5, 15]
-    lmbds = [30, 0]
+    # ks = [1, 5, 15]
+    lmbds = [100, 0]
+    
+    basis = FourierBasisNormalized 
+    # basis = Basis
+    
     n_points = len(Xtrain)
     train_losses = defaultdict(list)
     test_losses = defaultdict(list)
@@ -207,29 +190,34 @@ if __name__ == '__main__':
         for i, k in enumerate(ks):
             print(f'k = {k}')
             
-            Xtrain_basis = Basis(Xtrain, k)
-            Xtest_basis = Basis(Xtest, k)
+            xs = np.linspace(0, 1, n_points)
+            
+            Xtrain_basis = basis(Xtrain, k)
+            Xtest_basis = basis(Xtest, k)
             
             # Learn parameters w on training data
             w_k = RidgeRegression(Xtrain_basis, Ytrain, lmbd_reg=lmbd)
             
-            f_k = np.dot(Xtrain_basis, w_k)
-            xs = np.linspace(0, 1, n_points)
+            f_k = np.dot(basis(xs, k), w_k)
             
-            train_loss = loss(Ytrain, f_k)
-            test_loss = loss(Ytest, np.dot(Xtest_basis, w_k))
+            f_k_train = np.dot(Xtrain_basis, w_k)
+            f_k_test = np.dot(Xtest_basis, w_k)
+            
+            train_loss = loss(Ytrain, f_k_train)
+            test_loss = loss(Ytest, f_k_test)
             
             train_losses[lmbd].append(train_loss)
             test_losses[lmbd].append(test_loss)
             
             ax = axs[j, i]
-            ax.scatter(Xtrain, Ytrain)
+            ax.scatter(Xtrain, Ytrain, alpha=0.5, s=10)
             ax.plot(xs, f_k, color='red')
             ax.set_title(f'k = {k}, λ = {lmbd}')
             ax.set_xlabel('X')
             ax.set_ylabel('Y')
 
     plt.tight_layout()
+    plt.savefig('hw5/1c_ridge_regression_fit.png')
     plt.show()
 
     # Plot training and test loss as a function of k for λ = 0 and λ = 30 as subplots
@@ -243,4 +231,5 @@ if __name__ == '__main__':
         axs[i].legend()
 
     plt.tight_layout()
+    plt.savefig('hw5/1c_ridge_regression_loss.png')
     plt.show()
