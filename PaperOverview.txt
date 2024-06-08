@@ -10,7 +10,7 @@ Relevance:  1. exact term matching (BM25 good)
 
 
 DRMM and how it adresses Relevance Matching:
-1. query term importance
+1. Exact matching signals: 
 Therefore choose interaction focused model (otherwise exact terms lost)
 
 2. query term importance
@@ -27,7 +27,9 @@ q = [Woran, liegts]
 
 Training:
 
-Dataset:
+Dataset: (nicht soo wichtig)
+Robust04: news
+ClueWeb: ohne spam
 Topic Title/Discription?
 
 Comparison Models (auf zwei drei reduzieren):
