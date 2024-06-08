@@ -1,0 +1,49 @@
+
+Representation vs Interaction focused model
+match(q, d) = F(phi(q), phi(d))
+
+Semantic vs Relevance Matching  
+Semantic:    similar meaning, meaning based on grammatical structure, similiar meaning based on entire doc
+Relevance:  1. exact term matching (BM25 good)
+            2. query term imprtance (*bitcoin* news)
+            3. matching that works for verbosity vs scope hypothesis
+
+
+DRMM and how it adresses Relevance Matching:
+1. query term importance
+Therefore choose interaction focused model (otherwise exact terms lost)
+
+2. query term importance
+gating mechanism
+
+3. diverse matching
+relevance matching not poisiton related (diverse matching requirement) --> choose rather strength preserving matrix (histogram)!
+
+example:
+d = [car, rent, truck, bump, injunction, runway]
+q = [Woran, liegts]
+-> (1, 0.2, 0.7, 0.3, −0.1, 0.1) Interaction ->  [0, 1, 3, 1, 1] Histogram
+
+
+Training:
+
+Dataset:
+Topic Title/Discription?
+
+Comparison Models (auf zwei drei reduzieren):
+
+Evaluation:
+5 fold cross validation
+MeanAveragePrecision
+rerank based on 2000 best docs from QL model
+
+
+Results:
+DRMM mit LCH und IDF is best 
+
+Reanalysis of DRMM:
+No gating, No histogram. Result: no histogramm much worse (since position related)
+Term embeddings: 300d sufficient
+
+
+Future work: larger training data, click through logs (VL), phrase embeddings (local interactions refelct meaning betters)
